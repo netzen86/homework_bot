@@ -3,7 +3,6 @@ from custom_exception import (
     TokensMissing,
     TelegaMessageNotSent,
     APIReturnNon200,
-    KeysMissing
 )
 from dotenv import load_dotenv
 from telegram import Bot
@@ -100,11 +99,11 @@ def parse_status(homework):
 def check_tokens():
     """Проверка наличия необходимых токенов."""
     return all(
-                [
-                    PRACTICUM_TOKEN,
-                    TELEGRAM_TOKEN,
-                    TELEGRAM_CHAT_ID
-                ]
+        [
+            PRACTICUM_TOKEN,
+            TELEGRAM_TOKEN,
+            TELEGRAM_CHAT_ID
+        ]
     )
 
 
@@ -115,7 +114,7 @@ def main():
         raise TokensMissing
 
     bot = Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = (int(time.time()) - RETRY_TIME) 
+    current_timestamp = (int(time.time()) - RETRY_TIME)
 
     while True:
         try:

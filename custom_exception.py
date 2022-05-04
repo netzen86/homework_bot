@@ -9,6 +9,3 @@ class TelegaMessageNotSent(Exception):
 
 class APIReturnNon200(Exception):
     pass
-
-class KeysMissing(Exception):
-    pass
