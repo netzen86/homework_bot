@@ -18,7 +18,8 @@ load_dotenv()
 
 PRACTICUM_TOKEN = os.getenv('TOKEN_YNX')
 TELEGRAM_TOKEN = os.getenv('TOKEN_TELEGA')
-TELEGRAM_CHAT_ID = 918325986
+TELEGRAM_CHAT_ID = os.getenv('CHATID_TELEGA')
+
 
 RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
@@ -48,7 +49,7 @@ def send_message(bot, message):
         logging.error('Не удалось отправить в телегу')
 
 
-def get_api_answer(current_timestamp):
+def get_api_answer(current_timestamp=int(time.time())):
     """Запрос к API Яндекс практикума."""
     timestamp = current_timestamp
     params = {'from_date': timestamp}
@@ -61,40 +62,33 @@ def get_api_answer(current_timestamp):
         raise APIReturnNon200('Функция get_api_answer вернула не 200')
     hw = homework_statuses.json()
     if isinstance(hw, list):
-        hw = hw[0]
-    hw.update({'sc': homework_statuses.status_code})
+        hw_dict = hw[0]
+        return hw_dict
     return hw
 
 
 def check_response(response):
     """Проверка ответа API Яндекс практикума."""
-    sc = response.pop('sc')
-    if sc != 200:
-        raise APIReturnNon200('Функция get_api_answer вернула не 200')
-    if isinstance(response, dict):
-        if isinstance(response.get('homeworks'), list):
-            if len(response.get('homeworks')):
-                if 'homework_name' or 'status' in response.get(
-                    'homeworks'
-                )[0].keys():
-                    return response.get('homeworks')
-                else:
-                    raise KeysMissing(
-                        'отсутствие ожидаемых ключей в ответе API'
-                    )
-            return response.get('homeworks')
-        else:
-            raise NotCorrectAPIAnswer('Под ключом `homeworks` не список')
-    else:
+    if not isinstance(response, dict):
         raise NotCorrectAPIAnswer('Функция get_api_answer вернула не словарь')
+    response_lst = response.get('homeworks')
+    if not isinstance(response_lst, list):
+        raise NotCorrectAPIAnswer('Под ключом `homeworks` не список')
+    if not len(response_lst):
+        raise NotCorrectAPIAnswer('Под ключом `homeworks` список пуст')
+    return response_lst
 
 
 def parse_status(homework):
     """Подготовка сообщения для отправки в телегу."""
-    print(homework)
     if len(homework):
         if isinstance(homework, list):
             homework = homework[0]
+        keys = homework.keys()
+        if 'status' not in keys:
+            logging.error('отсутствие ключа status в ответе API')
+        if 'homework_name' not in keys:
+            logging.error('отсутствие ключа homework_name в ответе API')
         homework_name = homework['homework_name']
         homework_status = homework['status']
         verdict = HOMEWORK_STATUSES[homework_status]
@@ -105,9 +99,13 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверка наличия необходимых токенов."""
-    if not PRACTICUM_TOKEN or not TELEGRAM_TOKEN:
-        return False
-    return True
+    return all(
+                [
+                    PRACTICUM_TOKEN,
+                    TELEGRAM_TOKEN,
+                    TELEGRAM_CHAT_ID
+                ]
+    )
 
 
 def main():
@@ -117,17 +115,17 @@ def main():
         raise TokensMissing
 
     bot = Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(time.time())
+    current_timestamp = (int(time.time()) - RETRY_TIME) 
 
     while True:
         try:
-            response = get_api_answer(current_timestamp)
+            response = get_api_answer(current_timestamp=current_timestamp)
             checked_response = check_response(response)
             if checked_response:
                 message = parse_status(checked_response)
                 send_message(bot, message)
             logging.debug('отсутствие в ответе новых статусов')
-            current_timestamp = int(time.time())
+            current_timestamp = (int(time.time()) - RETRY_TIME)
             time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
