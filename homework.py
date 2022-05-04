@@ -75,7 +75,7 @@ def check_response(response):
     if not isinstance(response_lst, list):
         raise NotCorrectAPIAnswer('Под ключом `homeworks` не список')
     if not len(response_lst):
-        raise NotCorrectAPIAnswer('Под ключом `homeworks` список пуст')
+        logging.error('Под ключом `homeworks` список пуст')
     return response_lst
 
 
