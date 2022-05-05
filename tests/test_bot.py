@@ -264,6 +264,7 @@ class TestHomework:
         utils.check_function(homework, func_name, 1)
 
         result = homework.parse_status(test_data)
+        print(result)
         assert result.startswith(
             f'Изменился статус проверки работы "{random_timestamp}"'
         ), (

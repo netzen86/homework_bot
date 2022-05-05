@@ -78,11 +78,9 @@ def check_response(response):
     return response_lst
 
 
-def parse_status(homework):
+def parse_status(homework_data):
     """Подготовка сообщения для отправки в телегу."""
-    if len(homework):
-        if isinstance(homework, list):
-            homework = homework[0]
+    def parse(homework):
         keys = homework.keys()
         if 'status' not in keys:
             logging.error('отсутствие ключа status в ответе API')
@@ -94,6 +92,12 @@ def parse_status(homework):
         if homework_status not in HOMEWORK_STATUSES.keys():
             logging.error('недокументированный статус домашней работы')
         return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+    if not len(homework_data):
+        logging.debug('отсутствие в ответе новых статусов')
+    if isinstance(homework_data, list):
+        return parse(homework_data[0])
+    else:
+        return parse(homework_data)
 
 
 def check_tokens():
@@ -125,10 +129,10 @@ def main():
                 send_message(bot, message)
             logging.debug('отсутствие в ответе новых статусов')
             current_timestamp = (int(time.time()) - RETRY_TIME)
-            time.sleep(RETRY_TIME)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
             logging.error(error, exc_info=True)
+        finally:
             time.sleep(RETRY_TIME)
 
 
