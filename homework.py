@@ -70,28 +70,31 @@ def check_response(response):
     """Проверка ответа API Яндекс практикума."""
     if not isinstance(response, dict):
         raise NotCorrectAPIAnswer('Функция get_api_answer вернула не словарь')
-    response_lst = response.get('homeworks')
-    if not isinstance(response_lst, list):
+    homework_lst = response.get('homeworks')
+    if not isinstance(homework_lst, list):
         raise NotCorrectAPIAnswer('Под ключом `homeworks` не список')
-    if not len(response_lst):
+    if not len(homework_lst):
         logging.error('Под ключом `homeworks` список пуст')
-    return response_lst
+    return homework_lst
+
+
+def parse(homework):
+    """Формирует сообщение для отправки в телегу."""
+    keys = homework.keys()
+    if 'status' not in keys:
+        logging.error('отсутствие ключа status в ответе API')
+    if 'homework_name' not in keys:
+        logging.error('отсутствие ключа homework_name в ответе API')
+    homework_name = homework['homework_name']
+    homework_status = homework['status']
+    verdict = HOMEWORK_STATUSES[homework_status]
+    if homework_status not in HOMEWORK_STATUSES.keys():
+        logging.error('недокументированный статус домашней работы')
+    return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def parse_status(homework_data):
-    """Подготовка сообщения для отправки в телегу."""
-    def parse(homework):
-        keys = homework.keys()
-        if 'status' not in keys:
-            logging.error('отсутствие ключа status в ответе API')
-        if 'homework_name' not in keys:
-            logging.error('отсутствие ключа homework_name в ответе API')
-        homework_name = homework['homework_name']
-        homework_status = homework['status']
-        verdict = HOMEWORK_STATUSES[homework_status]
-        if homework_status not in HOMEWORK_STATUSES.keys():
-            logging.error('недокументированный статус домашней работы')
-        return f'Изменился статус проверки работы "{homework_name}". {verdict}'
+    """Если необходимо распаковывает список в словарь."""
     if not len(homework_data):
         logging.debug('отсутствие в ответе новых статусов')
     if isinstance(homework_data, list):
