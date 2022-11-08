@@ -1,2 +1,7 @@
 # homework_bot
-python telegram bot
+Проверяет статус домашней работы в яндекс практикуме
+
+## В проекте использованы:
+- API Яндекс практикума;
+- API Telegram;
+- python-telegram-bot - работа с API телеграма;
